@@ -12,34 +12,24 @@ from .taef2 import DiffusersTAEF2Wrapper
 from .utils import patchify_latents, unpatchify_latents
 
 
-device = mm.get_torch_device()
-
 folder_paths.folder_names_and_paths["latent_upscale_models"] = (
-    [
-        os.path.join(folder_paths.models_dir, "latent_upscale_models")
-    ],
-    {".safetensors"}
+    [os.path.join(folder_paths.models_dir, "latent_upscale_models")],
+    {".safetensors"},
 )
 
 folder_paths.folder_names_and_paths["vae_approx"] = (
-    [
-        os.path.join(folder_paths.models_dir, "vae_approx")
-    ],
-    {".safetensors"}
+    [os.path.join(folder_paths.models_dir, "vae_approx")],
+    {".safetensors"},
 )
 
 
-
 class LoadFlowUpscaler:
-
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
                 "model_name": (
-                    folder_paths.get_filename_list(
-                        "latent_upscale_models"
-                    ),
+                    folder_paths.get_filename_list("latent_upscale_models"),
                 ),
             }
         }
@@ -51,40 +41,39 @@ class LoadFlowUpscaler:
     def load_model(self, model_name):
         flow_upscaler = UpscalerUNet()
 
-        model_path = folder_paths.get_full_path(
-            "latent_upscale_models",
-            model_name
-        )
+        model_path = folder_paths.get_full_path("latent_upscale_models", model_name)
 
         state_dict = load_file(model_path)
         flow_upscaler.load_state_dict(state_dict)
         flow_upscaler.eval()
 
         return (flow_upscaler,)
-    
 
-    
 
 class UpscaleLatents:
-
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
                 "model": ("LATENT_UPSCALER",),
                 "latent": ("LATENT",),
-                "seed": ("INT", {
-                    "default": 0,
-                    "min": 0,
-                    "max": 0xffffffffffffffff,
-                    "control_after_generate": True,
-                }),
+                "seed": (
+                    "INT",
+                    {
+                        "default": 0,
+                        "min": 0,
+                        "max": 0xFFFFFFFFFFFFFFFF,
+                        "control_after_generate": True,
+                    },
+                ),
             }
         }
 
     RETURN_TYPES = ("LATENT",)
     FUNCTION = "upscale"
+    CATEGORY = "latent upscale"
 
+    @torch.no_grad()
     def upscale(self, model, latent, seed):
 
         device = mm.get_torch_device()
@@ -93,8 +82,8 @@ class UpscaleLatents:
         latents_small = unpatchify_latents(latents_small)
         latents_small = latents_small.to(device)
 
+        batch_size = latents_small.shape[0]
         target_latent_height = latents_small.shape[2] * 2
-
         target_latent_width = latents_small.shape[3] * 2
 
         generator = torch.Generator(device=device)
@@ -106,12 +95,11 @@ class UpscaleLatents:
         latents = torch.normal(
             mean=0,
             std=1,
-            size=(1, 32, target_latent_height, target_latent_width),
+            size=(batch_size, 32, target_latent_height, target_latent_width),
             dtype=latents_small.dtype,
             device=device,
             generator=generator,
         )
-        model.eval()
 
         model = model.to(device)
 
@@ -128,12 +116,13 @@ class UpscaleLatents:
         latents = patchify_latents(latents)
 
         return ({"samples": latents},)
-    
+
 
 class ComfyUITAEF2Wrapper:
     def __init__(self, diffusers_taef2: DiffusersTAEF2Wrapper):
         self.taef2 = diffusers_taef2
 
+    @torch.no_grad()
     def encode(self, x):
         device = mm.get_torch_device()
         x = x.to(device)
@@ -145,7 +134,7 @@ class ComfyUITAEF2Wrapper:
 
         return x
 
-
+    @torch.no_grad()
     def decode(self, x):
         device = mm.get_torch_device()
         x = x.to(device)
@@ -163,25 +152,17 @@ class LoadTAEF2:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model_name": (
-                    folder_paths.get_filename_list(
-                        "vae_approx"
-                    ),
-                ),
+                "model_name": (folder_paths.get_filename_list("vae_approx"),),
             }
         }
-    
+
     RETURN_TYPES = ("VAE",)
     FUNCTION = "load_model"
     CATEGORY = "vae"
 
     def load_model(self, model_name):
-        
 
-        model_path = folder_paths.get_full_path(
-            "vae_approx",
-            model_name
-        )
+        model_path = folder_paths.get_full_path("vae_approx", model_name)
 
         taef2 = DiffusersTAEF2Wrapper(model_path)
         taef2.eval()
@@ -190,10 +171,15 @@ class LoadTAEF2:
 
         return (comfyui_wrapper,)
 
+
 NODE_CLASS_MAPPINGS = {
-    "LoadFlowUpscaler": LoadFlowUpscaler, "UpscaleLatents": UpscaleLatents, "LoadTAEF2": LoadTAEF2
+    "LoadFlowUpscaler": LoadFlowUpscaler,
+    "UpscaleLatents": UpscaleLatents,
+    "LoadTAEF2": LoadTAEF2,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "LoadFlowUpscaler": "Load Flow Upscaler", "UpscaleLatents": "Upscale Latents", "LoadTAEF2": "Load TAEF2"
+    "LoadFlowUpscaler": "Load Flow Upscaler",
+    "UpscaleLatents": "Upscale Latents",
+    "LoadTAEF2": "Load TAEF2",
 }
