@@ -8,10 +8,12 @@ Under the hood, it is a lightweight **Rectified Flow** model with **59M** parame
 
 Features:
 
-* Upscaling latents from **512x512** to **1024x1024** takes **7ms** on an RTX 5090
+* Upscaling from **512x512** to **1024x1024** takes **8ms*** 
 * The model is trained for **2X** upscaling, but multiple passes can be chained to reach up to **8K** resolution
 * A full pipeline with Flux generation, upscaling to **8K**, and decoding runs in just **25 seconds** (on RTX 5090)
 * The training process uses **Flow Distillation** with Flux.2 as a teacher, forcing the model to learn strong image semantics
+
+*On RTX 5090, in latent space, without decoding, see benchmark [here](https://github.com/tensorforger/CTGMWorkshop).
 
 ![comparison](https://raw.githubusercontent.com/tensorforger/tensorforger/main/assets/upscaler_comparison.png)
 
