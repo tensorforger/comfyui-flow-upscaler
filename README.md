@@ -13,7 +13,9 @@ Features:
 * A full pipeline with Flux generation, upscaling to **8K**, and decoding runs in just **25 seconds** (on RTX 5090)
 * The training process uses **Flow Distillation** with Flux.2 as a teacher, forcing the model to learn strong image semantics
 
-Here is one **4X** upscaled image (two passes):
+![comparison](https://raw.githubusercontent.com/tensorforger/tensorforger/main/assets/upscaler_comparison.png)
+
+Here is one **4X** upscaled image (workflow included):
 
 ![example](https://raw.githubusercontent.com/tensorforger/tensorforger/main/assets/upscaled_cat.png)
 
